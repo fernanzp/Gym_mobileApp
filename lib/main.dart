@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'login.dart';
+import 'home.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -17,7 +16,11 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: const Color(0xFF0066FF),
       ),
-      home: const LoginPage(),
+      initialRoute: '/',
+      routes: {
+        '/': (_) => const LoginPage(),
+        '/home': (_) => const HomePage(),
+      },
     );
   }
 }
