@@ -11,6 +11,8 @@ dependencies:
     sdk: flutter
   dio: ^5.9.0
   flutter_secure_storage: ^9.2.4
+  flutter_svg: ^2.0.9
+  syncfusion_flutter_gauges: ^23.1.44
 
 dev_dependencies:
   flutter_test:
@@ -19,3 +21,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icons/
+    - assets/images/

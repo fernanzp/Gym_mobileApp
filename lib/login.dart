@@ -14,7 +14,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
+  final _passCtrl = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
   final _api = Api();
@@ -24,8 +24,8 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     // Prefill en modo debug para probar rápido
     if (kDebugMode) {
-      _emailCtrl.text = 'josetorres@gmail.com';
-      _passCtrl.text  = '123456789';
+      _emailCtrl.text = '';
+      _passCtrl.text = '';
     }
   }
 
@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
     try {
       debugPrint('>>> Haciendo POST /api/login ...');
-      final data  = await _api.login(_emailCtrl.text.trim(), _passCtrl.text);
+      final data = await _api.login(_emailCtrl.text.trim(), _passCtrl.text);
       debugPrint('>>> Respuesta login: $data');
 
       final token = data['token'] as String?;
@@ -60,9 +60,9 @@ class _LoginPageState extends State<LoginPage> {
       await Session.saveToken(token);
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('¡Bienvenido!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('¡Bienvenido!')));
 
       // Navegación a Home (ruta nombrada)
       try {
@@ -76,21 +76,28 @@ class _LoginPageState extends State<LoginPage> {
       }
     } on DioException catch (e) {
       final code = e.response?.statusCode;
-      final serverMsg = (e.response?.data is Map && (e.response!.data as Map).containsKey('message'))
+      final serverMsg =
+          (e.response?.data is Map &&
+              (e.response!.data as Map).containsKey('message'))
           ? e.response!.data['message'].toString()
           : null;
-      final msg = serverMsg ?? (code == 401 ? 'Correo o contraseña incorrectos'
-                                            : 'No se pudo iniciar sesión');
+      final msg =
+          serverMsg ??
+          (code == 401
+              ? 'Correo o contraseña incorrectos'
+              : 'No se pudo iniciar sesión');
       debugPrint('>>> DioException: code=$code body=${e.response?.data}');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     } catch (e) {
       debugPrint('>>> Error inesperado: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error inesperado')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Error inesperado')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -100,7 +107,8 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(), // cerrar teclado al tocar fuera
+      onTap: () =>
+          FocusScope.of(context).unfocus(), // cerrar teclado al tocar fuera
       child: Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
@@ -160,7 +168,9 @@ class _LoginPageState extends State<LoginPage> {
                     validator: (v) {
                       final value = v?.trim() ?? '';
                       if (value.isEmpty) return 'Ingresa tu correo';
-                      final ok = RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(value);
+                      final ok = RegExp(
+                        r'^[^@]+@[^@]+\.[^@]+$',
+                      ).hasMatch(value);
                       return ok ? null : 'Correo inválido';
                     },
                   ),
@@ -187,8 +197,9 @@ class _LoginPageState extends State<LoginPage> {
                       fillColor: const Color(0xFFF3F3F3),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscure ? Icons.visibility_outlined
-                                   : Icons.visibility_off_outlined,
+                          _obscure
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                         ),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
@@ -201,8 +212,9 @@ class _LoginPageState extends State<LoginPage> {
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
+                    validator: (v) => (v == null || v.isEmpty)
+                        ? 'Ingresa tu contraseña'
+                        : null,
                   ),
                   const SizedBox(height: 28),
 
@@ -245,7 +257,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 12),
 
                   // Enlace "¿Olvidaste tu contraseña?"
-                  Center(
+                  /*Center(
                     child: TextButton(
                       onPressed: () {},
                       style: TextButton.styleFrom(
@@ -261,8 +273,8 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 160),
+                  ),*/
+                  const SizedBox(height: 1),
 
                   // Registro en recepción
                   Center(
