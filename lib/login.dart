@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'; // kDebugMode
 import 'package:dio/dio.dart';
 
-import 'core/api.dart';
-import 'core/session.dart';
+import '../core/api.dart';
+import '../core/session.dart';
+import 'theme/app_colors.dart'; // Importamos tus colores
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -123,7 +124,10 @@ class _LoginPageState extends State<LoginPage> {
                   // Flecha de retroceso
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-                    onPressed: () {},
+                    onPressed: () {
+                      // Acción temporal si vienes de una pantalla de bienvenida
+                      // Navigator.pop(context);
+                    },
                   ),
                   const SizedBox(height: 16),
 
@@ -155,7 +159,7 @@ class _LoginPageState extends State<LoginPage> {
                     decoration: InputDecoration(
                       hintText: 'ejemplo@gmail.com',
                       filled: true,
-                      fillColor: const Color(0xFFF3F3F3),
+                      fillColor: AppColors.grisBajito, // USANDO APP COLORS
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 14,
                         horizontal: 12,
@@ -194,12 +198,13 @@ class _LoginPageState extends State<LoginPage> {
                     decoration: InputDecoration(
                       hintText: 'Contraseña',
                       filled: true,
-                      fillColor: const Color(0xFFF3F3F3),
+                      fillColor: AppColors.grisBajito, // USANDO APP COLORS
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscure
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined,
+                          color: AppColors.grisOscuro, // Icono en gris oscuro
                         ),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
@@ -224,7 +229,8 @@ class _LoginPageState extends State<LoginPage> {
                     height: 48,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF0066FF),
+                        backgroundColor: AppColors
+                            .azul, // USANDO APP COLORS (Azul corporativo)
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(24),
                         ),
@@ -256,27 +262,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Enlace "¿Olvidaste tu contraseña?"
-                  /*Center(
-                    child: TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(50, 20),
-                      ),
-                      child: const Text(
-                        '¿Olvidaste tu contraseña?',
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 18,
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-                    ),
-                  ),*/
-                  const SizedBox(height: 1),
-
                   // Registro en recepción
+                  const SizedBox(height: 1),
                   Center(
                     child: RichText(
                       text: const TextSpan(
