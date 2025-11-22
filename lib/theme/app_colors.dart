@@ -18,4 +18,13 @@ class AppColors {
   // Fondos suaves para badges (similares a los de la web)
   static const Color successLight = Color(0xFFECFDF5); // Emerald-50
   static const Color errorLight = Color(0xFFFEF2F2); // Rose-50
+
+  // --- NUEVOS COLORES PARA PERFIL ---
+  // Estado Activo (Verde mockup)
+  static const Color activeText = Color(0xFF238F4D);
+  static const Color activeBg = Color(0xFFDBFCE7);
+
+  // Estado Vencido (Rojo similar)
+  static const Color expiredText = Color(0xFFB91C1C); // Rojo oscuro para texto
+  static const Color expiredBg = Color(0xFFFEE2E2); // Rojo muy claro para fondo
 }

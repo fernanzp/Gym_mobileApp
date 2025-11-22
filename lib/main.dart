@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login.dart';
 import 'home.dart';
-import 'welcome1.dart';
-import 'welcome2.dart';
+
 import 'theme/app_colors.dart';
 
 void main() => runApp(const MyApp());
@@ -17,17 +16,10 @@ class MyApp extends StatelessWidget {
       title: 'Gym App',
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: AppColors.azul,
-        scaffoldBackgroundColor: Colors.white,
+        colorSchemeSeed: const Color(0xFF0066FF),
       ),
-      // Pantalla inicial: Login
-      home: const LoginPage(),
-      routes: {
-        '/login': (_) => const LoginPage(),
-        '/home': (_) => const HomePage(),
-        '/welcome1': (_) => const Welcome1Page(),
-        '/welcome2': (_) => const Welcome2Page(),
-      },
+      initialRoute: '/',
+      routes: {'/': (_) => const LoginPage(), '/home': (_) => const HomePage()},
     );
   }
 }
