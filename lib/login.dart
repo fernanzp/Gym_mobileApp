@@ -50,31 +50,60 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
     try {
       debugPrint('>>> Haciendo POST /api/login ...');
+      
+      // 1. LLAMADA A LA API
       final data = await _api.login(_emailCtrl.text.trim(), _passCtrl.text);
       debugPrint('>>> Respuesta login: $data');
 
       final token = data['token'] as String?;
+      final userMap = data['user'] as Map<String, dynamic>?;
+
       if (token == null || token.isEmpty) {
         throw Exception('Token vacío');
       }
+      
+      // Validamos que venga el estatus
+      if (userMap == null) { // A veces userMap puede ser null si la API falla
+         throw Exception('Datos de usuario no disponibles');
+      }
+      
+      // Obtenemos el estatus (si no viene, asumimos 0 por seguridad)
+      final int userStatus = userMap['estatus'] is int ? userMap['estatus'] : 0;
 
+      // 2. GUARDAR TOKEN
       await Session.saveToken(token);
+
+      // 3. LÓGICA DE USUARIO NUEVO
+      // Si el usuario tiene estatus 0, significa que acaba de entrar por primera vez.
+      // Le avisamos a Laravel que actualice su estatus a 1 para que no vuelva a ver la bienvenida.
+      if (userStatus == 0) {
+        debugPrint('>>> Usuario Nuevo (Estatus 0). Actualizando a 1...');
+        try {
+          await _api.completeOnboarding();
+        } catch (e) {
+          // Si falla esto no es crítico, dejamos pasar al usuario
+          debugPrint('>>> Error actualizando estatus: $e');
+        }
+      }
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('¡Bienvenido!')));
 
-      // Navegación a Home (ruta nombrada)
+      // 4. NAVEGACIÓN AL HOME
+      // Usamos pushNamedAndRemoveUntil para borrar el historial.
+      // Así, si le dan "atrás" en el Home, se salen de la app en vez de volver al Login.
       try {
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       } catch (e) {
         debugPrint('>>> Error navegando a /home: $e');
-        // Si por alguna razón no existe la ruta, avisa
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ruta /home no registrada')),
         );
       }
+
     } on DioException catch (e) {
       final code = e.response?.statusCode;
       final serverMsg =
@@ -125,8 +154,10 @@ class _LoginPageState extends State<LoginPage> {
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new, size: 20),
                     onPressed: () {
-                      // Acción temporal si vienes de una pantalla de bienvenida
-                      // Navigator.pop(context);
+                      // Si vienes de la pantalla de bienvenida, esto te regresa a ella
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      }
                     },
                   ),
                   const SizedBox(height: 16),
