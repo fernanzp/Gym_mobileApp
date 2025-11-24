@@ -99,7 +99,7 @@ class _HomePageState extends State<HomePage> {
   }) {
     // Define los colores usando AppColors
     final bgColor = attended
-        ? AppColors.azul
+        ? AppColors.activeText
         : AppColors.grisBajito; // Usamos gris bajito para inactivo
     // Si está activo texto blanco, si no, gris oscuro
     final textColor = attended ? Colors.white : AppColors.grisOscuro;
@@ -163,31 +163,37 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Tarjeta con el gráfico de ocupación actual
+  /// Tarjeta con el gráfico de ocupación actual (CORREGIDO y AJUSTADO)
   Widget _currentCapacityCard() {
     const double currentCapacity = 65; // Porcentaje de ocupación
 
-    return Container(
-      height: 190,
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.grisBajito, // Fondo de la tarjeta
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Ocupación Actual',
-            style: TextStyle(
-              color: AppColors.grisOscuro,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Título afuera
+        const Text(
+          'Ocupación Actual',
+          style: TextStyle(
+            fontFamily: 'Istok Web',
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
           ),
-          const SizedBox(height: 24),
-          Expanded(
+        ),
+        const SizedBox(height: 16),
+
+        // Contenedor de la Card
+        Container(
+          height: 190,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+          ),
+          padding: const EdgeInsets.all(16),
+          // Usamos Center para centrar vertical y horizontalmente el contenido
+          child: Center(
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -200,18 +206,18 @@ class _HomePageState extends State<HomePage> {
                       showTicks: false,
                       startAngle: 180,
                       endAngle: 0,
-                      radiusFactor: 1.5,
+                      radiusFactor: 0.9, // Reducido el factor de radio
                       axisLineStyle: const AxisLineStyle(
-                        thickness: 22,
-                        color: Colors
-                            .white, // Fondo del track en blanco para contraste sobre grisBajito
+                        thickness:
+                            15, // Reducido el grosor para que sea más chico
+                        color: Colors.white,
                         cornerStyle: CornerStyle.bothCurve,
                       ),
                       pointers: const <GaugePointer>[
                         RangePointer(
                           value: currentCapacity,
-                          width: 22,
-                          color: AppColors.azul, // Medidor en azul
+                          width: 15, // Reducido el ancho del puntero
+                          color: AppColors.azul,
                           enableAnimation: true,
                           cornerStyle: CornerStyle.bothCurve,
                         ),
@@ -219,11 +225,14 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-                const Align(
-                  alignment: Alignment(0.0, -0.2),
+                Align(
+                  alignment: const Alignment(
+                    0.0,
+                    0.1,
+                  ), // Ajustada la posición del texto
                   child: Text(
-                    '${currentCapacity}%', // Convertimos a entero visualmente si quieres .toInt()
-                    style: TextStyle(
+                    '${currentCapacity.toInt()}%',
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: AppColors.azul,
@@ -233,34 +242,127 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  /// Sección de Membresía
+  Widget _membershipSection() {
+    const String planName = 'Plan Mensual';
+    const bool isActive = true;
+    const String startDate = '16 Sep 2025';
+    const String endDate = '16 Oct 2025';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Tú Membresía',
+          style: TextStyle(
+            fontFamily: 'Istok Web',
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    planName,
+                    style: const TextStyle(
+                      fontFamily: 'Istok Web',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? AppColors.activeBg
+                          : AppColors.expiredBg,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      isActive ? 'Activo' : 'Vencido',
+                      style: TextStyle(
+                        fontFamily: 'Istok Web',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isActive
+                            ? AppColors.activeText
+                            : AppColors.expiredText,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  _svg('assets/icons/calendar.svg', size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Válido desde: $startDate',
+                    style: const TextStyle(
+                      fontFamily: 'Istok Web',
+                      fontSize: 15,
+                      color: AppColors.grisOscuro,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  _svg('assets/icons/calendar.svg', size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Válido hasta: $endDate',
+                    style: const TextStyle(
+                      fontFamily: 'Istok Web',
+                      fontSize: 15,
+                      color: AppColors.grisOscuro,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildBody() {
-    final placeholders = List.generate(4, (_) => _card());
-
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
       children: [
         _weekCalendar(),
         const SizedBox(height: 20),
         _currentCapacityCard(),
-        const SizedBox(height: 0),
-        ...placeholders,
+        const SizedBox(height: 24),
+        _membershipSection(),
       ],
-    );
-  }
-
-  Widget _card() {
-    return Container(
-      height: 92,
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.grisBajito,
-        borderRadius: BorderRadius.circular(16),
-      ),
     );
   }
 
@@ -271,7 +373,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(28),
         child: Container(
           height: 64,
-          color: AppColors.grisBajito, // Fondo del nav
+          color: AppColors.grisBajito,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
