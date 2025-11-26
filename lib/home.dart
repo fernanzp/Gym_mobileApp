@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
+import 'notifications_page.dart';
+import 'calendar_page.dart';
 
 import 'theme/app_colors.dart';
 
@@ -68,7 +70,10 @@ class _HomePageState extends State<HomePage> {
             clipBehavior: Clip.none,
             children: [
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Aquí iría tu navegación a notificaciones
+                  // Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage()));
+                },
                 icon: _svg('assets/icons/bell.svg', size: 24),
                 tooltip: 'Notificaciones',
               ),
@@ -354,46 +359,106 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBody() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-      children: [
-        _weekCalendar(),
-        const SizedBox(height: 20),
-        _currentCapacityCard(),
-        const SizedBox(height: 24),
-        _membershipSection(),
-      ],
-    );
+    switch (index) {
+      case 0:
+        // ÍNDICE 0: El contenido original del Home
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+          children: [
+            _weekCalendar(),
+            const SizedBox(height: 20),
+            _currentCapacityCard(),
+            const SizedBox(height: 24),
+            _membershipSection(),
+          ],
+        );
+      case 1:
+        // ÍNDICE 1: La nueva página de Calendario
+        return const CalendarPage();
+      case 2:
+        // ÍNDICE 2: Perfil (Placeholder)
+        return const Center(child: Text("Perfil en construcción"));
+      default:
+        return Container();
+    }
   }
 
   Widget _bottomNav() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Container(
-          height: 64,
-          color: AppColors.grisBajito,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              IconButton(
-                onPressed: () => setState(() => index = 0),
-                icon: _svg('assets/icons/home.svg', active: index == 0),
-                tooltip: 'Inicio',
+      child: Container(
+        height: 64,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              onPressed: () => setState(() => index = 0),
+              icon: _svg('assets/icons/home.svg', active: index == 0),
+              tooltip: 'Inicio',
+            ),
+            IconButton(
+              onPressed: () => setState(() => index = 1),
+              icon: _svg('assets/icons/calendar.svg', active: index == 1),
+              tooltip: 'Calendario',
+            ),
+
+            // 🔥 AQUÍ ESTÁ EL CAMBIO: PopupMenuButton en lugar de IconButton simple
+            PopupMenuButton<String>(
+              // Icono de la tuerca. Usamos color grisOscuro siempre o azul si estuviera activo (opcional)
+              icon: _svg('assets/icons/gear.svg', active: false),
+              tooltip: 'Configuración',
+              color: Colors.white,
+              surfaceTintColor: Colors.white,
+              // Offset negativo para que el menú salga hacia ARRIBA de la barra
+              offset: const Offset(0, -60),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              IconButton(
-                onPressed: () => setState(() => index = 1),
-                icon: _svg('assets/icons/calendar.svg', active: index == 1),
-                tooltip: 'Calendario',
-              ),
-              IconButton(
-                onPressed: () => setState(() => index = 2),
-                icon: _svg('assets/icons/user.svg', active: index == 2),
-                tooltip: 'Perfil',
-              ),
-            ],
-          ),
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                // Opción: Cerrar Sesión
+                const PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.logout_rounded,
+                        color: AppColors.error,
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Cerrar sesión',
+                        style: TextStyle(
+                          color: AppColors.error, // Texto rojo
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              onSelected: (String value) {
+                if (value == 'logout') {
+                  // Lógica de logout
+                  print("Cerrando sesión desde la barra inferior...");
+                  // Navigator.pushReplacementNamed(context, '/login');
+                }
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -403,7 +468,8 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: _appBar(),
+      // CONDICIÓN: Si el index es 0 (Home), muestra _appBar(). Si no, null (ocúltalo).
+      appBar: index == 0 ? _appBar() : null,
       body: _buildBody(),
       bottomNavigationBar: _bottomNav(),
     );
