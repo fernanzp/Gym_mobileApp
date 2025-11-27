@@ -14,16 +14,16 @@ class OnboardingItem {
 
 // Lista de contenido para las dos pantallas de bienvenida
 const List<OnboardingItem> onboardingData = [
-  // Slide 1: Flow Gym
+  // Slide 1: GymFlow
   OnboardingItem(
     imagePath: 'assets/images/welcome_bg1.png', 
-    title: 'Flow Gym',
+    title: 'GymFlow',
     subtitle: 'Bienvenido a nuestra comunidad fitness. Un lugar cómodo donde todos somos una familia y nos apoyamos.',
   ),
-  // Slide 2: Brawl Gym
+  // Slide 2: GymFlow
   OnboardingItem(
     imagePath: 'assets/images/welcome_bg2.png', 
-    title: 'Brawl Gym',
+    title: 'GymFlow',
     subtitle: 'Para comenzar a usar la app, favor de presentarse en recepción para registrarte.',
   ),
 ];

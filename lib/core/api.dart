@@ -14,7 +14,6 @@ class Api {
             headers: {'Accept': 'application/json'},
           ),
         ) {
-    // Interceptor: Agrega el token automáticamente si existe
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (o, h) async {
@@ -28,19 +27,41 @@ class Api {
     );
   }
 
-  // 1. Función Login
   Future<Map<String, dynamic>> login(String email, String pass) async {
-    final r = await dio.post(
-      '/login',
-      data: {'email': email, 'password': pass},
-    );
+    final r = await dio.post('/login', data: {'email': email, 'password': pass});
+    if (r.data['token'] != null) {
+      // Guardamos con tu método
+      await Session.saveToken(r.data['token']);
+    }
     return r.data as Map<String, dynamic>;
   }
 
-  // 2. NUEVA FUNCIÓN: Esta es la que te faltaba
   Future<void> completeOnboarding() async {
-    // Llama a la ruta de Laravel para cambiar estatus a 1
-    // No necesitamos headers manuales, el interceptor de arriba ya pone el token
     await dio.post('/onboarding-complete');
+  }
+
+  Future<Map<String, dynamic>> getAforo() async {
+    final r = await dio.get('/aforo');
+    return r.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getHeaderData() async {
+    final r = await dio.get('/header-data');
+    return r.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getUserProfile() async {
+    final r = await dio.get('/user-profile');
+    return r.data as Map<String, dynamic>;
+  }
+
+  Future<void> logout() async {
+    try { await dio.post('/logout'); } catch (_) {}
+    await Session.clear();
+  }
+
+  Future<Map<String, dynamic>> getBusynessStats() async {
+    final r = await dio.get('/gym-stats');
+    return r.data as Map<String, dynamic>;
   }
 }
