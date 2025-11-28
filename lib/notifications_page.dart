@@ -4,7 +4,6 @@ import '../core/api.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
-
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
 }
@@ -23,77 +22,44 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Future<void> _loadNotifications() async {
     try {
       final data = await _api.getUserProfile();
-      final mem = data['membresia']; // Datos que vienen de Laravel
+      final mem = data['membresia'];
       
       List<Map<String, dynamic>> list = [];
 
-      if (mem != null) {
-        int dias = mem['dias_restantes']; // El cálculo que hizo Laravel
-        bool activo = mem['activo'];
-        String nombrePlan = mem['nombre'];
-        String fechaPago = mem['inicio']; // Fecha de inicio (Pago)
-        String fechaFin = mem['fin'];     // Fecha de vencimiento
+      // 1. Notificación de Alerta (Vencimiento)
+      if (mem != null && mem['tipo_alerta'] != 'none') {
+        String type = mem['tipo_alerta']; // expired, urgent, warning
+        String title = '';
+        String time = 'Ahora';
 
-        // --- 1. LÓGICA DE ALERTAS (10, 5 días y Vencida) ---
-        
-        if (!activo || dias < 0) {
-          // CASO: VENCIDA
-          list.add({
-            'type': 'expired',
-            'title': '¡Membresía Vencida!',
-            'message': 'Tu $nombrePlan ha expirado. Renueva para seguir entrenando.',
-            'time': 'Ahora',
-            'isRead': false,
-          });
-        } 
-        else if (dias <= 5) {
-          // CASO: URGENTE (5 DÍAS O MENOS)
-          list.add({
-            'type': 'urgent',
-            'title': '¡Quedan $dias días!',
-            'message': 'Tu $nombrePlan está por finalizar. ¡No pierdas tu racha!',
-            'time': 'Urgente',
-            'isRead': false,
-          });
-        } 
-        else if (dias <= 10) {
-          // CASO: AVISO (10 DÍAS O MENOS)
-          list.add({
-            'type': 'warning',
-            'title': 'Renovación Próxima',
-            'message': 'Te quedan $dias días de tu $nombrePlan. Ve preparándote.',
-            'time': 'Aviso',
-            'isRead': false,
-          });
-        }
+        if (type == 'expired') title = '¡Membresía Vencida!';
+        else if (type == 'urgent') title = 'Renovación Urgente';
+        else if (type == 'warning') title = 'Recordatorio de Pago';
 
-        // --- 2. NOTIFICACIÓN INFORMATIVA DE PAGO (SIEMPRE VISIBLE) ---
-        if (fechaPago != '--') {
-          list.add({
-            'type': 'info_payment',
-            'title': 'Detalles de tu Plan',
-            'message': 'Pagado el: $fechaPago\nVence el: $fechaFin',
-            'time': 'Info',
-            'isRead': true,
-          });
-        }
-      }
-
-      // 3. Notificación de bienvenida (Relleno bonito)
-      list.add({
-        'type': 'welcome',
-        'title': 'Bienvenido a Gym App',
-        'message': 'Aquí recibirás tus avisos importantes.',
-        'time': 'Hace días',
-        'isRead': true,
-      });
-
-      if (mounted) {
-        setState(() {
-          notifications = list;
-          _loading = false;
+        list.add({
+          'type': type,
+          'title': title,
+          'message': mem['mensaje_alerta'],
+          'time': time,
+          'isRead': false, // Siempre aparece como no leída para llamar la atención
         });
       }
+
+      // 2. Notificación Informativa (Fechas)
+      if (mem != null && mem['inicio'] != '--') {
+         list.add({
+          'type': 'info_payment',
+          'title': 'Detalles de tu Plan',
+          'message': 'Plan: ${mem['nombre']}\nPagado el: ${mem['inicio']}\nVence el: ${mem['fin']}',
+          'time': 'Info',
+          'isRead': true,
+        });
+      }
+
+      // 3. Relleno
+      list.add({'type': 'welcome', 'title': 'Bienvenido', 'message': 'Sistema de notificaciones activo.', 'time': 'Hoy', 'isRead': true});
+
+      if (mounted) setState(() { notifications = list; _loading = false; });
     } catch (e) {
       if (mounted) setState(() => _loading = false);
     }
@@ -104,28 +70,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Notificaciones',
-          style: TextStyle(fontFamily: 'Istok Web', fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20),
-        ),
+        backgroundColor: Colors.white, elevation: 0, centerTitle: true,
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 20), onPressed: () => Navigator.pop(context)),
+        title: const Text('Notificaciones', style: TextStyle(fontFamily: 'Istok Web', fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20)),
       ),
-      body: _loading 
-        ? const Center(child: CircularProgressIndicator())
-        : notifications.isEmpty 
-          ? const Center(child: Text("No tienes notificaciones"))
-          : ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              itemCount: notifications.length,
-              separatorBuilder: (ctx, i) => const Divider(height: 1, color: AppColors.grisBajito, indent: 70, endIndent: 16),
-              itemBuilder: (ctx, i) => _NotificationItem(data: notifications[i]),
-            ),
+      // RefreshIndicator para que puedas deslizar y actualizar después de cambiar la BD
+      body: RefreshIndicator(
+        onRefresh: _loadNotifications,
+        color: AppColors.azul,
+        child: _loading 
+          ? const Center(child: CircularProgressIndicator())
+          : notifications.isEmpty 
+            ? const Center(child: Text("Sin notificaciones"))
+            : ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: notifications.length,
+                separatorBuilder: (ctx, i) => const Divider(height: 20, color: Colors.transparent),
+                itemBuilder: (ctx, i) => _NotificationItem(data: notifications[i]),
+              ),
+      ),
     );
   }
 }
@@ -137,53 +100,38 @@ class _NotificationItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isRead = data['isRead'];
-    IconData icon;
-    Color color;
-    Color bg;
+    IconData icon; Color color; Color bg;
 
-    // Configuración de colores e iconos según el tipo
     switch (data['type']) {
       case 'expired': // ROJO
-        icon = Icons.block_rounded;
-        color = AppColors.error;
-        bg = AppColors.errorLight;
-        break;
-      case 'urgent': // NARANJA (5 días)
-        icon = Icons.access_time_filled_rounded;
-        color = const Color(0xFFFF6B00); // Naranja fuerte
-        bg = const Color(0xFFFFF0E0);
-        break;
-      case 'warning': // AMARILLO (10 días)
-        icon = Icons.warning_amber_rounded;
-        color = AppColors.warning;
-        bg = const Color(0xFFFEF3C7);
-        break;
-      case 'info_payment': // AZUL (Información de pago)
-        icon = Icons.receipt_long_rounded;
-        color = AppColors.azul;
-        bg = const Color(0xFFE0F2FE);
-        break;
-      default: // GRIS (Bienvenida)
-        icon = Icons.notifications_none_rounded;
-        color = AppColors.grisOscuro;
-        bg = AppColors.grisBajito;
+        icon = Icons.block_rounded; color = AppColors.error; bg = AppColors.errorLight; break;
+      case 'urgent': // NARANJA
+        icon = Icons.timer_rounded; color = const Color(0xFFFF6B00); bg = const Color(0xFFFFF7ED); break;
+      case 'warning': // AMARILLO
+        icon = Icons.warning_amber_rounded; color = AppColors.warning; bg = const Color(0xFFFEF3C7); break;
+      case 'info_payment': // AZUL
+        icon = Icons.receipt_long_rounded; color = AppColors.azul; bg = const Color(0xFFEFF6FF); break;
+      default: 
+        icon = Icons.notifications_none_rounded; color = AppColors.grisOscuro; bg = AppColors.grisBajito;
     }
 
     return Container(
-      color: isRead ? Colors.white : AppColors.azul.withOpacity(0.04),
+      decoration: BoxDecoration(
+        color: isRead ? Colors.white : bg.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.grisBajito),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2))]
+      ),
       padding: const EdgeInsets.all(16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icono circular
           Container(
-            width: 44, 
-            height: 44, 
+            width: 40, height: 40, 
             decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 22),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 16),
-          // Textos
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,30 +139,12 @@ class _NotificationItem extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      data['title'], 
-                      style: TextStyle(
-                        fontFamily: 'Istok Web', 
-                        fontWeight: isRead ? FontWeight.w600 : FontWeight.bold, 
-                        fontSize: 16, 
-                        color: Colors.black87
-                      )
-                    ),
-                    Text(
-                      data['time'], 
-                      style: TextStyle(
-                        fontSize: 12, 
-                        color: data['type'] == 'expired' ? AppColors.error : AppColors.azul, 
-                        fontWeight: FontWeight.w600
-                      )
-                    ),
+                    Text(data['title'], style: TextStyle(fontWeight: isRead ? FontWeight.w600 : FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                    Text(data['time'], style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  data['message'], 
-                  style: const TextStyle(fontFamily: 'Istok Web', fontSize: 14, color: AppColors.grisOscuro, height: 1.3)
-                ),
+                const SizedBox(height: 6),
+                Text(data['message'], style: const TextStyle(fontSize: 13, color: AppColors.grisOscuro, height: 1.4)),
               ],
             ),
           ),

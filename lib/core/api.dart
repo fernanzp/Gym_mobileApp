@@ -64,4 +64,5 @@ class Api {
     final r = await dio.get('/gym-stats');
     return r.data as Map<String, dynamic>;
   }
+  
 }

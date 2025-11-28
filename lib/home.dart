@@ -9,7 +9,8 @@ import 'theme/app_colors.dart';
 import 'core/api.dart';
 import 'calendar_page.dart';
 import 'notifications_page.dart';
-import 'main.dart'; // Para reiniciar app al salir
+import 'main.dart'; 
+import 'busyness_chart.dart'; // <--- Importamos la gráfica
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,6 +27,7 @@ class _HomePageState extends State<HomePage> {
   int peopleCount = 0;
   String userName = "Cargando...";
   String todayDateStr = "";
+  String todayDayName = "";
   bool isLoadingAforo = true;
   Timer? _timer;
   
@@ -34,12 +36,13 @@ class _HomePageState extends State<HomePage> {
   String planName = "--";
   String planStart = "--";
   String planEnd = "--";
-  DateTime? membershipStartDate; // Fecha real de inicio para lógica de colores
+  DateTime? membershipStartDate;
   bool isPlanActive = false;
 
-  // --- VARIABLES ESTADÍSTICAS (Horas) ---
+  // --- VARIABLES ESTADÍSTICAS ---
   List<String> peakHours = [];
   List<String> quietHours = [];
+  List<Map<String, dynamic>> busynessHistogram = [];
 
   @override
   void initState() {
@@ -48,8 +51,10 @@ class _HomePageState extends State<HomePage> {
     // 1. Configurar fecha en español
     initializeDateFormatting('es_ES', null).then((_) {
       if(mounted) {
+        final now = DateTime.now();
         setState(() {
-          todayDateStr = toBeginningOfSentenceCase(DateFormat('E, d MMM', 'es_ES').format(DateTime.now()))!;
+          todayDateStr = toBeginningOfSentenceCase(DateFormat('E, d MMM', 'es_ES').format(now))!;
+          todayDayName = toBeginningOfSentenceCase(DateFormat('EEEE', 'es_ES').format(now))!;
         });
       }
     });
@@ -57,11 +62,11 @@ class _HomePageState extends State<HomePage> {
     // 2. Cargas Iniciales
     _fetchData();
     
-    // 3. Timer de 5 segundos para actualizar todo en tiempo real
+    // 3. Timer de 5 segundos (AHORA INCLUYE LA GRÁFICA)
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
         _refreshAforoOnly();
         _cargarPerfil(); 
-        // No cargamos estadísticas cada 5s porque eso cambia poco, ahorramos recursos
+        _cargarEstadisticas(); // <--- ¡AQUÍ ESTÁ EL TIEMPO REAL!
     });
   }
 
@@ -124,13 +129,17 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           peakHours = List<String>.from(data['peak']);
           quietHours = List<String>.from(data['quiet']);
+          
+          if (data['histogram'] != null) {
+            busynessHistogram = List<Map<String, dynamic>>.from(data['histogram']);
+          }
         });
       }
     } catch (_) {}
   }
 
   void _logout() async {
-    // Limpiar caché de imágenes
+    // Limpieza profunda de caché visual
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
 
@@ -141,6 +150,7 @@ class _HomePageState extends State<HomePage> {
         userName = "";
         peopleCount = 0;
         attendanceDates = [];
+        busynessHistogram = [];
       });
       Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
     }
@@ -192,9 +202,9 @@ class _HomePageState extends State<HomePage> {
       textColor = Colors.white;
     } else if (isPast) {
       if (isBeforeMembership) {
-         bgColor = AppColors.grisBajito; // Gris (Antes de inscribirse)
+         bgColor = AppColors.grisBajito; // Gris
       } else {
-         bgColor = AppColors.error; // Rojo (Faltó)
+         bgColor = AppColors.error; // Rojo
          textColor = Colors.white;
       }
     }
@@ -255,43 +265,55 @@ class _HomePageState extends State<HomePage> {
   Widget _membershipSection() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5)),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(16), 
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5)
+      ),
       child: Column(
         children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(planName, style: const TextStyle(fontFamily: 'Istok Web', fontSize: 18, fontWeight: FontWeight.w500)),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(color: isPlanActive ? AppColors.successLight : AppColors.errorLight, borderRadius: BorderRadius.circular(20)),
-              child: Text(isPlanActive ? 'Activo' : 'Vencido', style: TextStyle(fontFamily: 'Istok Web', fontSize: 14, fontWeight: FontWeight.w600, color: isPlanActive ? AppColors.activeText : AppColors.expiredText)),
-            ),
-          ]),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+            children: [
+              Text(
+                planName, 
+                style: const TextStyle(fontFamily: 'Istok Web', fontSize: 18, fontWeight: FontWeight.w500)
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isPlanActive ? AppColors.successLight : AppColors.errorLight, 
+                  borderRadius: BorderRadius.circular(20)
+                ),
+                child: Text(
+                  isPlanActive ? 'Activo' : 'Vencido', 
+                  style: TextStyle(
+                    fontFamily: 'Istok Web', 
+                    fontSize: 14, 
+                    fontWeight: FontWeight.w600, 
+                    color: isPlanActive ? AppColors.activeText : AppColors.expiredText
+                  )
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
-          Row(children: [
-             const Icon(Icons.payment, size: 20, color: AppColors.grisOscuro),
-             const SizedBox(width: 12),
-             Text('Pagado el: $planStart', style: const TextStyle(fontFamily: 'Istok Web', fontSize: 15, color: AppColors.grisOscuro)),
-          ]),
+          Row(children: [const Icon(Icons.payment, size: 20, color: AppColors.grisOscuro), const SizedBox(width: 12), Text('Pagado el: $planStart', style: const TextStyle(fontFamily: 'Istok Web', fontSize: 15, color: AppColors.grisOscuro))]),
           const SizedBox(height: 12),
-          Row(children: [
-             const Icon(Icons.event_busy, size: 20, color: AppColors.grisOscuro),
-             const SizedBox(width: 12),
-             Text('Vence el: $planEnd', style: const TextStyle(fontFamily: 'Istok Web', fontSize: 15, color: AppColors.grisOscuro)),
-          ]),
+          Row(children: [const Icon(Icons.event_busy, size: 20, color: AppColors.grisOscuro), const SizedBox(width: 12), Text('Vence el: $planEnd', style: const TextStyle(fontFamily: 'Istok Web', fontSize: 15, color: AppColors.grisOscuro))]),
         ],
       ),
     );
   }
 
-  // --- NUEVA SECCIÓN: ESTADÍSTICAS DE HORAS ---
-
+  // --- SECCIÓN DE ESTADÍSTICAS (Texto) ---
   Widget _busynessSection() {
     if (peakHours.isEmpty && quietHours.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Mejor momento para asistir hoy al gimnasio", style: TextStyle(fontFamily: 'Istok Web', fontSize: 18, fontWeight: FontWeight.w600)),
+        Text("Mejor momento para ir el $todayDayName", style: const TextStyle(fontFamily: 'Istok Web', fontSize: 18, fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -302,7 +324,7 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [Icon(Icons.local_fire_department_rounded, color: AppColors.error, size: 20), const SizedBox(width: 6), const Text("Concurrido", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error))]),
+                    Row(children: [const Icon(Icons.local_fire_department_rounded, color: AppColors.error, size: 20), const SizedBox(width: 6), const Text("Concurrido", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error))]),
                     const SizedBox(height: 8),
                     ...peakHours.map((h) => Text(h, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
                   ],
@@ -317,7 +339,7 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [Icon(Icons.spa_rounded, color: AppColors.success, size: 20), const SizedBox(width: 6), const Text("Ausentado", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.success))]),
+                    Row(children: [const Icon(Icons.spa_rounded, color: AppColors.success, size: 20), const SizedBox(width: 6), const Text("Tranquilo", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.success))]),
                     const SizedBox(height: 8),
                     ...quietHours.map((h) => Text(h, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
                   ],
@@ -351,7 +373,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- NAVEGACIÓN ---
+  // --- NAVEGACIÓN PRINCIPAL ---
 
   Widget _getScreen() {
     if (_currentIndex == 0) return _buildDashboard();
@@ -369,7 +391,12 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 24),
         _membershipSection(),
         const SizedBox(height: 24),
-        _busynessSection(), // Nueva sección
+        // 🔥 AQUÍ ESTÁ LA GRÁFICA
+        if (busynessHistogram.isNotEmpty) ...[
+           BusynessChart(data: busynessHistogram),
+           const SizedBox(height: 24),
+        ],
+        _busynessSection(),
       ],
     );
   }
@@ -398,7 +425,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: _currentIndex == 0 ? _appBar() : null, // AppBar solo en Home
+      appBar: _currentIndex == 0 ? _appBar() : null,
       body: _getScreen(),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
