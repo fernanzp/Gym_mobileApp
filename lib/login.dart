@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // kDebugMode
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 
 import '../core/api.dart';

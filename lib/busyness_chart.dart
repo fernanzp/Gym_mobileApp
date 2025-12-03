@@ -9,17 +9,18 @@ class BusynessChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Calcular el máximo valor para que la gráfica no se corte
+    // 1. Calcular máximo valor (BLINDADO)
     double maxY = 0;
     for (var item in data) {
-      if (item['count'] > maxY) maxY = item['count'].toDouble();
+      // Convertimos a double sin importar si viene como int o string
+      double val = double.tryParse(item['count'].toString()) ?? 0.0;
+      if (val > maxY) maxY = val;
     }
-    // Margen superior estético
-    maxY = maxY < 10 ? 10 : maxY + 5; 
+    maxY = maxY < 10 ? 10 : maxY + 5;
 
     return Container(
       height: 220,
-      padding: const EdgeInsets.fromLTRB(12, 24, 12, 10), // Padding interno
+      padding: const EdgeInsets.fromLTRB(12, 24, 12, 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -46,30 +47,21 @@ class BusynessChart extends StatelessWidget {
           Expanded(
             child: BarChart(
               BarChartData(
-                // 2. ALINEACIÓN: spaceAround distribuye las 17 barras uniformemente
-                alignment: BarChartAlignment.spaceAround, 
+                alignment: BarChartAlignment.spaceAround,
                 maxY: maxY,
-                
-                // Línea base (Eje X)
                 borderData: FlBorderData(
                   show: true,
-                  border: const Border(
-                    bottom: BorderSide(color: AppColors.grisBajito, width: 1),
-                  ),
+                  border: const Border(bottom: BorderSide(color: AppColors.grisBajito, width: 1)),
                 ),
-                
-                // Cuadrícula sutil horizontal
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  horizontalInterval: 5, // Líneas cada 5 personas
+                  horizontalInterval: 5,
                   getDrawingHorizontalLine: (value) => FlLine(
                     color: AppColors.grisBajito.withOpacity(0.5),
                     strokeWidth: 1,
                   ),
                 ),
-
-                // Tooltip al tocar
                 barTouchData: BarTouchData(
                   enabled: true,
                   touchTooltipData: BarTouchTooltipData(
@@ -82,39 +74,23 @@ class BusynessChart extends StatelessWidget {
                     },
                   ),
                 ),
-
-                // Títulos (Ejes)
                 titlesData: FlTitlesData(
                   show: true,
                   leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  
-                  // EJE X: Las Horas
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 30,
-                      interval: 1, // Revisar cada índice
                       getTitlesWidget: (double value, TitleMeta meta) {
                         int hour = value.toInt();
-                        
-                        // Mostramos etiquetas cada 4 horas para limpieza visual
-                        // 6, 10, 14 (2pm), 18 (6pm), 22 (10pm)
                         if (hour == 6 || hour == 10 || hour == 14 || hour == 18 || hour == 22) {
                           String text = hour > 12 ? '${hour - 12}pm' : '${hour}am';
                           if (hour == 12) text = '12pm';
-                          
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              text, 
-                              style: const TextStyle(
-                                color: AppColors.grisOscuro, 
-                                fontSize: 11, 
-                                fontWeight: FontWeight.w600
-                              )
-                            ),
+                            child: Text(text, style: const TextStyle(color: AppColors.grisOscuro, fontSize: 11, fontWeight: FontWeight.w600)),
                           );
                         }
                         return const SizedBox.shrink();
@@ -122,16 +98,14 @@ class BusynessChart extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // 3. BARRAS
+                // AQUÍ ESTÁ LA MAGIA: Mapeo seguro de datos
                 barGroups: data.map((item) {
-                  int x = item['hour'];
-                  double y = double.parse(item['count'].toString());
+                  int x = int.tryParse(item['hour'].toString()) ?? 0;
+                  double y = double.tryParse(item['count'].toString()) ?? 0.0;
                   
-                  // Semáforo de colores
-                  Color barColor = AppColors.azul; 
-                  if (y < 5) barColor = AppColors.success; // Verde (Poco)
-                  else if (y > 15) barColor = AppColors.error; // Rojo (Mucho)
+                  Color barColor = AppColors.azul;
+                  if (y < 5) barColor = AppColors.success; 
+                  else if (y > 15) barColor = AppColors.error; 
 
                   return BarChartGroupData(
                     x: x,
@@ -139,11 +113,8 @@ class BusynessChart extends StatelessWidget {
                       BarChartRodData(
                         toY: y,
                         color: barColor,
-                        width: 14, // <--- BARRA MÁS ANCHA PARA QUE SE VEA MEJOR
+                        width: 14,
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                        backDrawRodData: BackgroundBarChartRodData(
-                           show: false, // Fondo desactivado para evitar errores
-                        ),
                       ),
                     ],
                   );
